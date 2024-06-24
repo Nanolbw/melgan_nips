@@ -1,5 +1,10 @@
-from mel2wav import MelVocoder
+import glob
+import os
 
+import numpy as np
+from matplotlib import pyplot as plt
+
+from mel2wav.interface import MelVocoder
 from pathlib import Path
 from tqdm import tqdm
 import argparse
@@ -17,19 +22,27 @@ def parse_args():
 
 
 def main():
-    args = parse_args()
-    vocoder = MelVocoder(args.load_path)
-
-    args.save_path.mkdir(exist_ok=True, parents=True)
-
-    for i, fname in tqdm(enumerate(args.folder.glob("*.wav"))):
-        wavname = fname.name
+    # args = parse_args()
+    load_path='/Users/bowenliu/Desktop/melgan-neurips/models/multi_speaker.pt'
+    vocoder = MelVocoder(load_path)
+    save_path='/Users/bowenliu/Desktop/melgan-neurips/wav'
+    # args.save_path.mkdir(exist_ok=True, parents=True)
+    folder='/Users/bowenliu/Desktop/mindaudio/examples/deepspeech2/LibriSpeech/test-clean/61/70970'
+    txt_files = glob.glob(os.path.join(folder, '*.flac'))
+    for i, fname in tqdm(enumerate(txt_files)):
+        print(fname)
+        wavname = fname
         wav, sr = librosa.core.load(fname)
-
-        mel, _ = vocoder(torch.from_numpy(wav)[None])
+        print(torch.from_numpy(wav)[None].size())
+        mel = vocoder(torch.from_numpy(wav)[None])
         recons = vocoder.inverse(mel).squeeze().cpu().numpy()
+        import soundfile as sf
 
-        librosa.output.write_wav(args.save_path / wavname, recons, sr=sr)
+        save_filename = os.path.join(save_path, f'{i}.wav')
+        print(save_filename)
+        sf.write(save_filename, recons, sr)
+
+
 
 
 if __name__ == "__main__":
